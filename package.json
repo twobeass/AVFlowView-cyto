@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "cytoscape": "^3.28.1",
+    "cytoscape-dagre": "^2.5.0",
+    "dagre": "^0.8.5",
     "zustand": "^4.4.7",
     "ajv": "^8.12.0",
     "react": "^18.2.0",
