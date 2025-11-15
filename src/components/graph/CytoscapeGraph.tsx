@@ -4,6 +4,7 @@ import dagre from 'cytoscape-dagre';
 import { useGraphStore } from '../../store/graphStore';
 import { transformToCytoscapeElements } from '../../utils/graphTransform';
 
+// Register dagre layout
 cytoscape.use(dagre);
 
 interface CytoscapeGraphProps {
@@ -14,9 +15,11 @@ interface CytoscapeGraphProps {
 
 /**
  * Main Cytoscape.js graph visualization component
- * Uses dagre layout for hierarchical AV signal flow visualization
- * Forces inputs on left, outputs on right via edge endpoints and taxi direction.
- * Ensures no overlaps and children are inside their areas.
+ * Professional AV schematic style with:
+ * - Inputs connecting on left, outputs on right
+ * - Rounded orthogonal edges with multiple segments
+ * - Precise edge-to-node attachment points
+ * - No overlapping nodes or areas
  */
 export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
   layoutName = 'dagre',
@@ -26,16 +29,16 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const { graph, selectNode, selectEdge, setZoomLevel } = useGraphStore();
-
+  
   useEffect(() => {
     if (!containerRef.current || !graph) return;
-
+    
     try {
       const cy = cytoscape({
         container: containerRef.current,
         elements: transformToCytoscapeElements(graph),
         style: [
-          // Node style: rectangular, no-overlap, standard AV look
+          // Base node style - rectangular for AV equipment
           {
             selector: 'node.node',
             style: {
@@ -46,18 +49,55 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               width: 120,
               height: 60,
               'font-size': 11,
-              'font-weight': 600,
+              'font-weight': '600',
               'text-wrap': 'wrap',
               'text-max-width': '110px',
               shape: 'rectangle',
               'border-width': 3,
               'border-color': '#003366',
-              color: '#fff',
+              color: '#ffffff',
               'padding': 8
             }
           },
-          // ... (category-specific styles omitted for brevity, keep from last version)
-          // Area styling
+          // Category-based node colors
+          {
+            selector: 'node.node-Video',
+            style: {
+              'background-color': '#0074D9',
+              'border-color': '#003d82'
+            }
+          },
+          {
+            selector: 'node.node-Audio',
+            style: {
+              'background-color': '#B10DC9',
+              'border-color': '#7b0a8f'
+            }
+          },
+          {
+            selector: 'node.node-Network',
+            style: {
+              'background-color': '#39CCCC',
+              'border-color': '#2a9999'
+            }
+          },
+          // Status-based styling overlay
+          {
+            selector: 'node.status-Existing',
+            style: {
+              'background-color': '#2ECC40',
+              'border-color': '#1f8c2b'
+            }
+          },
+          {
+            selector: 'node.status-Defect',
+            style: {
+              'background-color': '#FF4136',
+              'border-color': '#cc1f17',
+              'border-style': 'dashed'
+            }
+          },
+          // Area styling (compound nodes for grouping)
           {
             selector: 'node.area',
             style: {
@@ -73,10 +113,10 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               'text-halign': 'center',
               'text-margin-y': 10,
               color: '#666',
-              'padding': 30
+              'padding': 40  // More padding to contain children properly
             }
           },
-          // Edge: force left-to-right and endpoints
+          // Edge styling - orthogonal with rounded corners
           {
             selector: 'edge',
             style: {
@@ -84,10 +124,16 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               'line-color': '#888',
               'target-arrow-color': '#888',
               'target-arrow-shape': 'triangle',
+              'arrow-scale': 1.2,
+              // Orthogonal routing with improvements
               'curve-style': 'taxi',
-              'taxi-direction': 'rightward',
-              'taxi-turn': 50,
-              'taxi-turn-min-distance': 10,
+              'taxi-direction': 'auto',  // Auto-detect best routing
+              'taxi-turn': 20,  // Rounded corners (20px radius)
+              'taxi-turn-min-distance': 5,  // Allow more turns/segments
+              // Edge endpoints - force left and right connections
+              'source-endpoint': '100% 50%',  // Right side of source
+              'target-endpoint': '0% 50%',    // Left side of target
+              // Labels
               label: 'data(label)',
               'font-size': 9,
               'text-rotation': 'none',
@@ -95,12 +141,35 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               'text-background-color': '#fff',
               'text-background-opacity': 0.9,
               'text-background-padding': '3px',
-              'text-background-shape': 'roundrectangle',
-              'source-endpoint': '0% 50%',    // Always left center
-              'target-endpoint': '100% 50%'   // Always right center
+              'text-background-shape': 'roundrectangle'
             }
           },
-          // ... (category-specific edge styles omitted for brevity, keep from last version)
+          // Category-based edge colors
+          {
+            selector: 'edge.edge-Video',
+            style: {
+              'line-color': '#0074D9',
+              'target-arrow-color': '#0074D9',
+              width: 4
+            }
+          },
+          {
+            selector: 'edge.edge-Audio',
+            style: {
+              'line-color': '#B10DC9',
+              'target-arrow-color': '#B10DC9',
+              width: 4
+            }
+          },
+          {
+            selector: 'edge.edge-Network',
+            style: {
+              'line-color': '#39CCCC',
+              'target-arrow-color': '#39CCCC',
+              width: 4
+            }
+          },
+          // Selection styling
           {
             selector: ':selected',
             style: {
@@ -115,52 +184,54 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
         ],
         layout: {
           name: layoutName,
-          // Dagre options
-          rankDir: 'LR',
-          nodeSep: 90,
-          edgeSep: 60,
-          rankSep: 180,
+          // Dagre-specific options for AV signal flow
+          rankDir: 'LR',  // Left to Right signal flow
+          nodeSep: 100,  // Increased horizontal spacing between nodes
+          edgeSep: 50,   // Increased spacing between edges
+          rankSep: 200,  // Increased vertical spacing between ranks
           padding: 80,
           animate: false,
           fit: true,
-          spacingFactor: 1.2,
+          spacingFactor: 1.3,  // Extra spacing factor
           nodeDimensionsIncludeLabels: true
         }
       });
-
+      
       cyRef.current = cy;
-
+      
       // Event handlers
       cy.on('tap', 'node.node', (evt) => {
         const node: NodeSingular = evt.target;
         selectNode(node.id());
       });
-
+      
       cy.on('tap', 'edge', (evt) => {
         const edge: EdgeSingular = evt.target;
         selectEdge(edge.id());
       });
-
+      
+      // Zoom event handler
       cy.on('zoom', () => {
         setZoomLevel(cy.zoom());
       });
-
+      
+      // Clear selection on background tap
       cy.on('tap', (evt) => {
         if (evt.target === cy) {
           selectNode(null);
           selectEdge(null);
         }
       });
-
-      // Postprocess to nudge any child nodes inside their area compound parents
+      
+      // Post-process to ensure child nodes stay inside parent areas
       setTimeout(() => {
         cy.nodes('[parent]').forEach(node => {
           const parent = node.parent();
           if (parent && !parent.empty()) {
             const pbb = parent.boundingBox({ includeLabels: true, includeOverlays: false });
             const nbb = node.boundingBox({ includeLabels: true, includeOverlays: false });
-            // If child node is not fully inside parent, nudge it
-            const PAD = 10;
+            // Ensure child is fully inside parent with padding
+            const PAD = 15;
             let dx = 0, dy = 0;
             if (nbb.x1 < pbb.x1 + PAD) dx = (pbb.x1 + PAD) - nbb.x1;
             if (nbb.x2 > pbb.x2 - PAD) dx = (pbb.x2 - PAD) - nbb.x2;
@@ -171,8 +242,9 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
             }
           }
         });
-      }, 75); // Delay to allow layout finish
-
+      }, 100);  // Small delay to allow layout to complete
+      
+      // Cleanup function
       return () => {
         if (cyRef.current) {
           cyRef.current.destroy();
@@ -183,17 +255,17 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
       console.error('Error initializing Cytoscape:', error);
     }
   }, [graph, layoutName, selectNode, selectEdge, setZoomLevel]);
-
+  
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width,
+    <div 
+      ref={containerRef} 
+      style={{ 
+        width, 
         height,
         border: '1px solid #ccc',
         borderRadius: '4px',
         backgroundColor: '#fafafa'
-      }}
+      }} 
     />
   );
 };
