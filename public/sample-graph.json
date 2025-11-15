@@ -1,0 +1,172 @@
+{
+  "layout": {
+    "direction": "LR",
+    "portBinding": "auto",
+    "areaFirst": true,
+    "areaPadding": 50
+  },
+  "areas": [
+    {
+      "id": "area-stage",
+      "label": "Stage Area"
+    },
+    {
+      "id": "area-control",
+      "label": "Control Room"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "camera-1",
+      "manufacturer": "Sony",
+      "model": "PXW-Z750",
+      "category": "Video",
+      "subcategory": "Camera",
+      "status": "Regular",
+      "label": "Main Camera",
+      "areaId": "area-stage",
+      "ports": {
+        "sdi-out-1": {
+          "alignment": "Out",
+          "label": "SDI Out 1",
+          "type": "SDI",
+          "gender": "M"
+        },
+        "sdi-out-2": {
+          "alignment": "Out",
+          "label": "SDI Out 2",
+          "type": "SDI",
+          "gender": "M"
+        }
+      }
+    },
+    {
+      "id": "mixer-1",
+      "manufacturer": "Blackmagic",
+      "model": "ATEM 2 M/E",
+      "category": "Video",
+      "subcategory": "Switcher",
+      "status": "Regular",
+      "label": "Video Mixer",
+      "areaId": "area-control",
+      "ports": {
+        "sdi-in-1": {
+          "alignment": "In",
+          "label": "SDI In 1",
+          "type": "SDI",
+          "gender": "F"
+        },
+        "sdi-in-2": {
+          "alignment": "In",
+          "label": "SDI In 2",
+          "type": "SDI",
+          "gender": "F"
+        },
+        "sdi-out-pgm": {
+          "alignment": "Out",
+          "label": "Program Out",
+          "type": "SDI",
+          "gender": "M"
+        }
+      }
+    },
+    {
+      "id": "monitor-1",
+      "manufacturer": "Sony",
+      "model": "PVM-X550",
+      "category": "Video",
+      "subcategory": "Monitor",
+      "status": "Existing",
+      "label": "Program Monitor",
+      "areaId": "area-control",
+      "ports": {
+        "sdi-in": {
+          "alignment": "In",
+          "label": "SDI In",
+          "type": "SDI",
+          "gender": "F"
+        }
+      }
+    },
+    {
+      "id": "audio-mixer-1",
+      "manufacturer": "Yamaha",
+      "model": "QL5",
+      "category": "Audio",
+      "subcategory": "Mixer",
+      "status": "Regular",
+      "label": "Audio Console",
+      "areaId": "area-control",
+      "ports": {
+        "xlr-in-1": {
+          "alignment": "In",
+          "label": "XLR In 1",
+          "type": "XLR",
+          "gender": "F"
+        },
+        "xlr-out-main": {
+          "alignment": "Out",
+          "label": "Main Out L",
+          "type": "XLR",
+          "gender": "M"
+        }
+      }
+    },
+    {
+      "id": "mic-1",
+      "manufacturer": "Shure",
+      "model": "SM58",
+      "category": "Audio",
+      "subcategory": "Microphone",
+      "status": "Regular",
+      "label": "Stage Mic",
+      "areaId": "area-stage",
+      "ports": {
+        "xlr-out": {
+          "alignment": "Out",
+          "label": "XLR Out",
+          "type": "XLR",
+          "gender": "M"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "wireId": "W001",
+      "category": "Video",
+      "cableType": "SDI",
+      "label": "Camera to Mixer",
+      "source": "camera-1",
+      "sourcePortKey": "sdi-out-1",
+      "target": "mixer-1",
+      "targetPortKey": "sdi-in-1",
+      "binding": "exact"
+    },
+    {
+      "id": "edge-2",
+      "wireId": "W002",
+      "category": "Video",
+      "cableType": "SDI",
+      "label": "Mixer to Monitor",
+      "source": "mixer-1",
+      "sourcePortKey": "sdi-out-pgm",
+      "target": "monitor-1",
+      "targetPortKey": "sdi-in",
+      "binding": "exact"
+    },
+    {
+      "id": "edge-3",
+      "wireId": "A001",
+      "category": "Audio",
+      "cableType": "XLR",
+      "label": "Mic to Mixer",
+      "source": "mic-1",
+      "sourcePortKey": "xlr-out",
+      "target": "audio-mixer-1",
+      "targetPortKey": "xlr-in-1",
+      "binding": "exact"
+    }
+  ]
+}
