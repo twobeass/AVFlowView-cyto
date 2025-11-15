@@ -42,25 +42,50 @@ function validatePortReference(nodeId: string, portKey: string, node: AVNode): v
 export function transformToCytoscapeElements(graph: AVWiringGraph): ElementDefinition[] {
   const elements: ElementDefinition[] = [];
   
-  // Transform areas first (if they exist)
+  // PHASE 1: Transform areas first (parent compound nodes)
   if (graph.areas) {
-    graph.areas.forEach((area) => {
+    // First add root areas (those without parents)
+    const rootAreas = graph.areas.filter(area => !area.parentId);
+    rootAreas.forEach((area) => {
       validateId(area.id, 'area');
       
       elements.push({
         data: {
           id: area.id,
           label: area.label,
-          parent: area.parentId
+          metadata: area.metadata
+        },
+        classes: 'area'
+      });
+    });
+    
+    // Then add nested areas (those with parents)
+    const nestedAreas = graph.areas.filter(area => area.parentId);
+    nestedAreas.forEach((area) => {
+      validateId(area.id, 'area');
+      
+      elements.push({
+        data: {
+          id: area.id,
+          label: area.label,
+          parent: area.parentId,
+          metadata: area.metadata
         },
         classes: 'area'
       });
     });
   }
   
-  // Transform nodes
+  // PHASE 2: Transform nodes (regular nodes, not compound)
   graph.nodes.forEach((node: AVNode) => {
     validateId(node.id, 'node');
+    
+    // Build port info for display in node label or metadata
+    const portCount = Object.keys(node.ports).length;
+    const portSummary = Object.entries(node.ports).map(([key, port]) => ({
+      key,
+      ...port
+    }));
     
     elements.push({
       data: {
@@ -69,37 +94,18 @@ export function transformToCytoscapeElements(graph: AVWiringGraph): ElementDefin
         category: node.category,
         subcategory: node.subcategory,
         status: node.status,
-        ports: node.ports,
-        areaId: node.areaId,
+        portCount: portCount,
+        ports: portSummary, // Store port info for tooltips/details
         manufacturer: node.manufacturer,
         model: node.model,
-        metadata: node.metadata
+        metadata: node.metadata,
+        ...(node.areaId && { parent: node.areaId })
       },
-      classes: `node-${node.category} status-${node.status}`,
-      ...(node.areaId && { parent: node.areaId })
-    });
-    
-    // Transform ports as child nodes
-    Object.entries(node.ports).forEach(([portKey, port]) => {
-      const portId = `${node.id}:${portKey}`;
-      
-      elements.push({
-        data: {
-          id: portId,
-          label: port.label,
-          parent: node.id,
-          portAlignment: port.alignment,
-          portType: port.type,
-          portGender: port.gender,
-          portKey: portKey,
-          metadata: port.metadata
-        },
-        classes: `port port-${port.alignment}`
-      });
+      classes: `node node-${node.category} status-${node.status}`
     });
   });
   
-  // Transform edges
+  // PHASE 3: Transform edges (connections between nodes)
   graph.edges.forEach((edge: AVEdge) => {
     validateId(edge.id, 'edge');
     validateNodeReference(edge.source, graph.nodes);
@@ -116,28 +122,37 @@ export function transformToCytoscapeElements(graph: AVWiringGraph): ElementDefin
       validatePortReference(edge.target, edge.targetPortKey, targetNode);
     }
     
-    // Build source and target IDs (with port keys if specified)
-    const sourceId = edge.sourcePortKey 
-      ? `${edge.source}:${edge.sourcePortKey}` 
-      : edge.source;
-    const targetId = edge.targetPortKey 
-      ? `${edge.target}:${edge.targetPortKey}` 
-      : edge.target;
-      
+    // Build edge label with port information
+    let edgeLabel = edge.label || edge.wireId || '';
+    if (edge.sourcePortKey || edge.targetPortKey) {
+      const portInfo = [];
+      if (edge.sourcePortKey && sourceNode) {
+        portInfo.push(sourceNode.ports[edge.sourcePortKey].label);
+      }
+      if (edge.targetPortKey && targetNode) {
+        portInfo.push(targetNode.ports[edge.targetPortKey].label);
+      }
+      if (portInfo.length > 0) {
+        edgeLabel = edgeLabel ? `${edgeLabel} (${portInfo.join(' → ')})` : portInfo.join(' → ');
+      }
+    }
+    
     elements.push({
       data: {
         id: edge.id,
-        source: sourceId,
-        target: targetId,
-        label: edge.label || edge.wireId,
+        source: edge.source, // Connect directly to nodes, not ports
+        target: edge.target,
+        label: edgeLabel,
         category: edge.category,
         subcategory: edge.subcategory,
         cableType: edge.cableType,
         wireId: edge.wireId,
+        sourcePortKey: edge.sourcePortKey,
+        targetPortKey: edge.targetPortKey,
         binding: edge.binding,
         metadata: edge.metadata
       },
-      classes: `edge edge-${edge.category || 'default'}`
+      classes: `edge ${edge.category ? `edge-${edge.category}` : 'edge-default'}`
     });
   });
   
