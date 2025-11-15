@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AVWiringGraph",
+  "description": "Schema for A/V wiring graph visualization",
+  "type": "object",
+  "required": ["nodes", "edges"],
+  "properties": {
+    "layout": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": ["LR", "TB"]
+        },
+        "portBinding": {
+          "type": "string",
+          "enum": ["auto", "exact"]
+        },
+        "areaFirst": {
+          "type": "boolean"
+        },
+        "areaPadding": {
+          "type": "number"
+        }
+      }
+    },
+    "areas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]+$"
+          },
+          "label": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "manufacturer", "model", "category", "status", "ports"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]+$"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "subcategory": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Existing", "Regular", "Defect"]
+          },
+          "label": {
+            "type": "string"
+          },
+          "areaId": {
+            "type": "string"
+          },
+          "ports": {
+            "type": "object",
+            "patternProperties": {
+              ".*": {
+                "type": "object",
+                "required": ["alignment", "label", "type", "gender"],
+                "properties": {
+                  "alignment": {
+                    "type": "string",
+                    "enum": ["In", "Out", "Bidirectional"]
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": ["M", "F", "N/A"]
+                  },
+                  "metadata": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source", "target"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]+$"
+          },
+          "wireId": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "subcategory": {
+            "type": "string"
+          },
+          "cableType": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourcePortKey": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "targetPortKey": {
+            "type": "string"
+          },
+          "binding": {
+            "type": "string",
+            "enum": ["auto", "exact"]
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}
