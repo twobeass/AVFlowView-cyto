@@ -1,7 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import cytoscape, { Core, EdgeSingular, NodeSingular } from 'cytoscape';
+import dagre from 'cytoscape-dagre';
 import { useGraphStore } from '../../store/graphStore';
 import { transformToCytoscapeElements } from '../../utils/graphTransform';
+
+// Register dagre layout
+cytoscape.use(dagre);
 
 interface CytoscapeGraphProps {
   layoutName?: string;
@@ -11,9 +15,10 @@ interface CytoscapeGraphProps {
 
 /**
  * Main Cytoscape.js graph visualization component
+ * Uses dagre layout for hierarchical AV signal flow visualization
  */
 export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
-  layoutName = 'cose',
+  layoutName = 'dagre',
   width = '100%',
   height = '800px'
 }) => {
@@ -29,7 +34,7 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
         container: containerRef.current,
         elements: transformToCytoscapeElements(graph),
         style: [
-          // Base node style
+          // Base node style - rectangular for AV equipment look
           {
             selector: 'node.node',
             style: {
@@ -37,14 +42,16 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               label: 'data(label)',
               'text-valign': 'center',
               'text-halign': 'center',
-              width: 100,
-              height: 80,
+              width: 120,
+              height: 60,
               'font-size': 11,
+              'font-weight': '600',
               'text-wrap': 'wrap',
-              'text-max-width': '90px',
-              shape: 'roundrectangle',
-              'border-width': 2,
-              'border-color': '#003366'
+              'text-max-width': '110px',
+              shape: 'rectangle',
+              'border-width': 3,
+              'border-color': '#003366',
+              color: '#ffffff'
             }
           },
           // Category-based node colors
@@ -69,7 +76,7 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               'border-color': '#2a9999'
             }
           },
-          // Status-based styling (overlay on category colors)
+          // Status-based styling overlay
           {
             selector: 'node.status-Existing',
             style: {
@@ -85,24 +92,26 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               'border-style': 'dashed'
             }
           },
-          // Area styling (compound nodes)
+          // Area styling (compound nodes for grouping)
           {
             selector: 'node.area',
             style: {
               'background-color': '#f0f0f0',
-              'background-opacity': 0.3,
+              'background-opacity': 0.2,
               'border-width': 2,
               'border-color': '#999',
-              'border-style': 'dotted',
-              shape: 'roundrectangle',
+              'border-style': 'dashed',
+              shape: 'rectangle',
               'font-size': 14,
               'font-weight': 'bold',
               'text-valign': 'top',
               'text-halign': 'center',
-              'padding': 20
+              'text-margin-y': 10,
+              color: '#666',
+              'padding': 30
             }
           },
-          // Edge styling by category
+          // Edge styling - orthogonal (taxi) for AV schematic look
           {
             selector: 'edge',
             style: {
@@ -110,34 +119,43 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               'line-color': '#888',
               'target-arrow-color': '#888',
               'target-arrow-shape': 'triangle',
-              'curve-style': 'bezier',
+              'curve-style': 'taxi', // Orthogonal edges!
+              'taxi-direction': 'auto',
+              'taxi-turn': 50,
+              'taxi-turn-min-distance': 10,
               label: 'data(label)',
               'font-size': 9,
-              'text-rotation': 'autorotate',
+              'text-rotation': 'none',
+              'text-margin-y': -10,
               'text-background-color': '#fff',
-              'text-background-opacity': 0.8,
-              'text-background-padding': '3px'
+              'text-background-opacity': 0.9,
+              'text-background-padding': '3px',
+              'text-background-shape': 'roundrectangle'
             }
           },
+          // Category-based edge colors
           {
             selector: 'edge.edge-Video',
             style: {
               'line-color': '#0074D9',
-              'target-arrow-color': '#0074D9'
+              'target-arrow-color': '#0074D9',
+              width: 4
             }
           },
           {
             selector: 'edge.edge-Audio',
             style: {
               'line-color': '#B10DC9',
-              'target-arrow-color': '#B10DC9'
+              'target-arrow-color': '#B10DC9',
+              width: 4
             }
           },
           {
             selector: 'edge.edge-Network',
             style: {
               'line-color': '#39CCCC',
-              'target-arrow-color': '#39CCCC'
+              'target-arrow-color': '#39CCCC',
+              width: 4
             }
           },
           // Selection styling
@@ -153,11 +171,17 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
             }
           }
         ],
-        layout: { 
+        layout: {
           name: layoutName,
+          // Dagre-specific options for AV signal flow
+          rankDir: 'LR', // Left to Right signal flow
+          nodeSep: 80, // Horizontal spacing between nodes
+          edgeSep: 40, // Spacing between edges
+          rankSep: 150, // Vertical spacing between ranks/layers
           padding: 50,
-          animate: true,
-          animationDuration: 500
+          animate: false, // Disable animation to prevent cleanup errors
+          fit: true,
+          spacingFactor: 1.2
         }
       });
       
@@ -187,8 +211,12 @@ export const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
         }
       });
       
+      // Cleanup function
       return () => {
-        cy.destroy();
+        if (cyRef.current) {
+          cyRef.current.destroy();
+          cyRef.current = null;
+        }
       };
     } catch (error) {
       console.error('Error initializing Cytoscape:', error);
